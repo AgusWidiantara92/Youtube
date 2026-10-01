@@ -11,7 +11,7 @@ import { AnalyticsMatrixTab } from '@/components/AnalyticsMatrixTab';
 import { DetailedReportTab } from '@/components/DetailedReportTab';
 import { GameDetailModal } from '@/components/GameDetailModal';
 import { VercelDeployModal } from '@/components/VercelDeployModal';
-import { LayoutDashboard, Compass, Activity, FileText } from 'lucide-react';
+import { LayoutDashboard, Compass, Activity, FileText, Flame } from 'lucide-react';
 
 const dataset = gamingData as unknown as GamingDataset;
 
@@ -65,7 +65,7 @@ export default function DashboardPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `youtube_gaming_trend_v3_8_15.csv`);
+    link.setAttribute('download', `final_game_trend_v3_8_39_id.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -75,6 +75,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-950 pb-16">
       {/* Top Navigation Bar */}
       <Header
+        version={`v${dataset.version}`}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         onOpenDeployModal={() => setIsDeployModalOpen(true)}
@@ -83,6 +84,26 @@ export default function DashboardPage() {
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 lg:px-8 pt-6">
+        {/* Banner Dataset Active Focus */}
+        <div className="glass-panel p-4 rounded-2xl mb-6 flex flex-wrap items-center justify-between gap-4 border border-cyan-500/20 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+              <Flame className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                Dataset Fokus: <code className="text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">final_game_trend_v3_8_39_id.csv</code>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
+                  v3.8.39 ID
+                </span>
+              </h2>
+              <p className="text-xs text-slate-400">
+                Dashboard sepenuhnya difokuskan pada analisis 10 game dari dataset <code>final_game_trend_v3_8_39_id.csv</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* KPI Cards Banner */}
         <KpiCards kpi={dataset.kpi} records={records} />
 

@@ -4,6 +4,7 @@ import React from 'react';
 import { Gamepad2, Search, Download, ExternalLink } from 'lucide-react';
 
 interface HeaderProps {
+  version?: string;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   onOpenDeployModal: () => void;
@@ -11,6 +12,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  version = 'v3.8.39 ID',
   searchTerm,
   setSearchTerm,
   onOpenDeployModal,
@@ -30,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
                 Pusat Analitik Trend YouTube Gaming
               </h1>
               <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                v3.8.15
+                {version}
               </span>
             </div>
             <p className="text-xs text-slate-400">

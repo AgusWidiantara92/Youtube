@@ -1,5 +1,6 @@
 export type TrendStatus = 'RISING' | 'NEW' | 'DECLINING' | 'MIXED' | 'INSUFFICIENT_DATA';
 export type EvidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'REVIEW' | 'NO_COVERAGE';
+export type ActivityState = 'CURRENT_HOT' | 'WATCHLIST_INACTIVE';
 
 export interface GameRecord {
   rank: number;
@@ -31,6 +32,12 @@ export interface GameRecord {
   engagement_score: number;
   opportunity_score: number;
   analysis_label: string;
+  activity_state?: ActivityState | string;
+  current_pulse_videos?: number;
+  current_pulse_channels?: number;
+  current_pulse_weight?: number;
+  current_pulse_score?: number;
+  baseline_confidence?: number;
   view_reach_score?: number;
   breadth_reach_score?: number;
   avg_views_per_video: number;
@@ -39,6 +46,9 @@ export interface GameRecord {
 
 export interface KpiSummary {
   totalGames: number;
+  finalGamesCount?: number;
+  watchlistGamesCount?: number;
+  legacyV3839Count?: number;
   risingGames: number;
   newGames: number;
   decliningGames: number;
@@ -59,6 +69,9 @@ export interface GamingDataset {
   version: string;
   lastUpdated: string;
   final: GameRecord[];
+  watchlist: GameRecord[];
+  all_valid: GameRecord[];
+  v3_8_39?: GameRecord[];
   rankable: GameRecord[];
   kpi: KpiSummary;
   methodology: MethodologyItem[];

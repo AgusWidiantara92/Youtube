@@ -35,13 +35,13 @@ export const DetailedReportTab: React.FC<DetailedReportTabProps> = ({ records, k
       <div className="glass-panel p-8 rounded-3xl border border-cyan-500/30 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 relative overflow-hidden">
         <div className="flex items-center gap-3 text-cyan-400 font-bold text-xs uppercase tracking-widest mb-2">
           <FileText className="w-5 h-5 text-cyan-400" />
-          Laporan Analisis Eksekutif Resmi Pipeline V3.8.15
+          Laporan Analisis Eksekutif Resmi Pipeline V3.8.39 ID
         </div>
         <h1 className="text-3xl font-black text-white tracking-tight mb-3">
-          Analisis Trend Deskriptif & Performa Interaksi YouTube Gaming
+          Analisis Trend Deskriptif & Performa Interaksi YouTube Gaming (Indonesia)
         </h1>
         <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-          Dokumen ini menyajikan rincian komprehensif mengenai hasil olahan data <b>YouTube Gaming Analytics Pipeline V3.8.15</b>.
+          Dokumen ini menyajikan rincian komprehensif mengenai hasil olahan data <b>YouTube Gaming Analytics Pipeline V3.8.39 ID</b>.
           Laporan ini mengevaluasi <b>{records.length} game utama</b> berdasarkan sinyal momentum, jangkauan popularitas, kualitas keterlibatan penonton (engagement), serta efisiensi per konten video.
         </p>
       </div>
@@ -53,23 +53,25 @@ export const DetailedReportTab: React.FC<DetailedReportTabProps> = ({ records, k
           1. Ringkasan Temuan Utama & Performa Teratas
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div className="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2">
-            <div className="flex items-center justify-between font-bold text-emerald-400 text-sm">
-              <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4" /> Pemimpin Momentum (Rising)</span>
-              <span>PUBG</span>
+          {risingGames.length > 0 && (
+            <div className="p-4 rounded-2xl bg-slate-900/80 border border-emerald-500/30 space-y-2">
+              <div className="flex items-center justify-between font-bold text-emerald-400 text-sm">
+                <span className="flex items-center gap-1.5"><TrendingUp className="w-4 h-4" /> Pemimpin Momentum (Rising)</span>
+                <span className="capitalize">{risingGames[0].entity}</span>
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                <b>{risingGames[0].entity.toUpperCase()}</b> mencatatkan lonjakan performa terkuat dalam periode ini dengan pertumbuhan penonton <b>+{risingGames[0].view_growth_pct?.toFixed(1)}%</b> (dari {risingGames[0].previous_views.toLocaleString()} menjadi {risingGames[0].recent_views.toLocaleString()} views), didukung pertumbuhan komentar <b>+{risingGames[0].comment_growth_pct?.toFixed(1)}%</b> dan Skor Peluang <b>{risingGames[0].opportunity_score} poin</b>.
+              </p>
             </div>
-            <p className="text-slate-300 leading-relaxed">
-              <b>PUBG</b> mencatatkan lonjakan performa terkuat dalam periode ini dengan pertumbuhan penonton mencapai <b>+193.2%</b> (dari 92.1k menjadi 270.1k views), didukung pertumbuhan komentar sebesar <b>+241.1%</b> dan Skor Momentum mencapai <b>91.0 poin</b>.
-            </p>
-          </div>
+          )}
 
           <div className="p-4 rounded-2xl bg-slate-900/80 border border-amber-500/30 space-y-2">
             <div className="flex items-center justify-between font-bold text-amber-400 text-sm">
               <span className="flex items-center gap-1.5"><Zap className="w-4 h-4" /> Efisiensi Konten Teratas</span>
-              <span>{topEfficiency?.entity.toUpperCase()}</span>
+              <span className="capitalize">{topEfficiency?.entity}</span>
             </div>
             <p className="text-slate-300 leading-relaxed">
-              Secara rata-rata penonton per video (penyetaraan sampel), <b>{topEfficiency?.entity}</b> menghasilkan efisiensi tertinggi dengan <b>{topEfficiency?.avg_views_per_video.toLocaleString()} views/video</b> dari sampel {topEfficiency?.recent_videos} video.
+              Secara rata-rata penonton per video (penyetaraan sampel), <b>{topEfficiency?.entity.toUpperCase()}</b> menghasilkan efisiensi tertinggi dengan <b>{topEfficiency?.avg_views_per_video.toLocaleString()} views/video</b> dari sampel {topEfficiency?.recent_videos} video.
             </p>
           </div>
         </div>
@@ -91,25 +93,31 @@ export const DetailedReportTab: React.FC<DetailedReportTabProps> = ({ records, k
             <p className="leading-relaxed">
               Status <b>RISING</b> diberikan kepada game yang memiliki data komparabel pada periode sebelumnya dan menunjukkan pertumbuhan positif yang konsisten di seluruh indikator utama (views, komentar, serta cakupan kanal).
             </p>
-            <ul className="list-disc list-inside space-y-1 text-slate-200">
-              <li><b>PUBG</b> (Skor Peluang: 78.6 | Bukti: HIGH): Mengalami kenaikan jangkauan penonton dari 92,154 menjadi 270,170 views. Jumlah kanal aktif meningkat dari 1 menjadi 4 kanal, menandakan tren partisipasi kreator yang makin meluas.</li>
+            <ul className="list-disc list-inside space-y-1.5 text-slate-200">
+              {risingGames.map((g) => (
+                <li key={g.entity}>
+                  <b className="capitalize">{g.entity}</b> (Skor Peluang: {g.opportunity_score} | Bukti: {g.evidence_level}): Mengalami kenaikan jangkauan penonton dari {g.previous_views.toLocaleString()} menjadi {g.recent_views.toLocaleString()} views (+{g.view_growth_pct?.toFixed(1)}%). Jumlah kanal aktif meningkat dari {g.previous_channels} menjadi {g.recent_channels} kanal.
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
-        {/* Kategori 2: Game New (Rilis Baru) */}
+        {/* Kategori 2: Game New (Rilis Baru / Emerging) */}
         <div className="space-y-3">
           <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> B. Game Berstatus NEW (Rilis Baru / Emerging) — {newGames.length} Game
+            <Sparkles className="w-4 h-4" /> B. Game Berstatus NEW / MIXED (Emerging & Tren Baru) — {newGames.length} Game
           </h3>
           <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-xs text-slate-300 space-y-2">
             <p className="leading-relaxed">
-              Status <b>NEW</b> diberikan kepada game yang belum memiliki data baseline pada periode sebelumnya (previous_views = 0). Pipeline secara sengaja <i>tidak memberikan angka pertumbuhan % buatan</i> agar tidak merusak validitas statistik.
+              Status <b>NEW / MIXED</b> diberikan kepada game dengan pergerakan tren baru atau baru mendapatkan traksi besar di platform YouTube.
             </p>
-            <ul className="list-disc list-inside space-y-1 text-slate-200">
-              <li><b>Silent Hill Townfall</b> (Jangkauan: 2,519,654 views | 5 video di 5 kanal | Bukti: HIGH): Merupakan rilis baru dengan jangkauan penonton terbesar di dataset. Memperoleh Skor Peluang tinggi (87.4 poin) karena jangkauan organik yang sangat massif.</li>
-              <li><b>Control Resonant</b> (Jangkauan: 855,127 views | 3 video di 3 kanal | Bukti: MEDIUM): Menunjukkan minat awal penonton yang kuat dengan rasio interaksi yang stabil.</li>
-              <li><b>Halo</b> (Jangkauan: 350,950 views | 3 video di 3 kanal | Bukti: MEDIUM): Mencatatkan rasio suka (Like Rate) tertinggi di antara rilis baru sebesar <b>5.58%</b>.</li>
+            <ul className="list-disc list-inside space-y-1.5 text-slate-200">
+              {newGames.map((g) => (
+                <li key={g.entity}>
+                  <b className="capitalize">{g.entity}</b> (Jangkauan: {g.recent_views.toLocaleString()} views | {g.recent_videos} video di {g.recent_channels} kanal | Bukti: {g.evidence_level}): Skor Peluang {g.opportunity_score} poin. Rata-rata views per video: {g.avg_views_per_video.toLocaleString()}.
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -117,17 +125,18 @@ export const DetailedReportTab: React.FC<DetailedReportTabProps> = ({ records, k
         {/* Kategori 3: Game Declining / Cooling */}
         <div className="space-y-3">
           <h3 className="text-sm font-bold text-rose-400 flex items-center gap-2">
-            <TrendingDown className="w-4 h-4" /> C. Game Berstatus Declining (Fase Penurunan / Cooling) — {decliningGames.length} Game
+            <TrendingDown className="w-4 h-4" /> C. Game Berstatus Declining / Insufficient Data — {decliningGames.length} Game
           </h3>
           <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 text-xs text-slate-300 space-y-2">
             <p className="leading-relaxed font-medium">
-              <i>Catatan Penting:</i> Status <b>DECLINING</b> merefleksikan pergerakan siklus pencarian pada jendela waktu tersebut, <u>bukan penilaian kualitas game secara keseluruhan</u>.
+              <i>Catatan Penting:</i> Status <b>DECLINING / INSUFFICIENT DATA</b> merefleksikan pergerakan siklus pencarian pada jendela waktu tersebut, <u>bukan penilaian kualitas game secara keseluruhan</u>.
             </p>
             <ul className="list-disc list-inside space-y-1.5 text-slate-200">
-              <li><b>Fortnite</b> (1,943,429 views | Declining -32.6%): Meskipun mengalami penurunan dari periode lalu (2.88M views), Fortnite tetap mempertahankan volume penonton yang sangat besar dan efisiensi konten yang sangat tinggi (647k views/video).</li>
-              <li><b>Marvel's Wolverine</b> (822,602 views | Declining -91.2%): Penurunan tajam disebabkan oleh lonjakan sampel pada periode lalu (18 video saat momen pengumuman resmi trailer) dibandingkan 2 video pada periode saat ini.</li>
-              <li><b>Roblox</b> (621,953 views | Declining -19.9%): Menunjukkan penurunan moderat, namun memiliki rasio interaksi komentar yang cukup aktif (1,744 komentar).</li>
-              <li><b>Undertale</b> & <b>Minecraft</b>: Mengalami penurunan siklus aktivitas penonton dan dimasukkan ke dalam daftar pantau karena sampel kanal yang terbatas.</li>
+              {decliningGames.map((g) => (
+                <li key={g.entity}>
+                  <b className="capitalize">{g.entity}</b> ({g.recent_views.toLocaleString()} views | Status: {g.trend_status}): {g.view_growth_pct ? `Perubahan views: ${g.view_growth_pct.toFixed(1)}%` : 'Perlu sampel data tambahan'}.
+                </li>
+              ))}
             </ul>
           </div>
         </div>

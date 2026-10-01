@@ -13,7 +13,7 @@ import {
   PieChart,
   Pie,
 } from 'recharts';
-import { BarChart3, PieChart as PieIcon, Lightbulb, Zap, Trophy, TrendingUp, Sparkles, TrendingDown, ChevronRight, Eye, Award } from 'lucide-react';
+import { BarChart3, PieChart as PieIcon, Lightbulb, Zap, Trophy, TrendingUp, Sparkles, TrendingDown, ChevronRight, Eye, Award, Activity } from 'lucide-react';
 
 interface OverviewTabProps {
   records: GameRecord[];
@@ -39,7 +39,7 @@ const STATUS_LABELS_ID: Record<string, string> = {
 export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame }) => {
   const [rankingMode, setRankingMode] = useState<'views' | 'efficiency' | 'opportunity'>('views');
 
-  // 1. Data Peringkat Dinamis (Default: Total Penonton Views 7 Hari Terakhir)
+  // 1. Data Peringkat Dinamis
   const rankedGames = [...records].sort((a, b) => {
     if (rankingMode === 'views') {
       return b.recent_views - a.recent_views;
@@ -95,7 +95,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
 
   return (
     <div className="space-y-6">
-      {/* SEKSI UTAMA: Tabel Peringkat Game Trending (7 Hari Terakhir) */}
+      {/* SEKSI UTAMA: Tabel Peringkat Game Trending */}
       <div className="glass-panel p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -104,7 +104,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
             </div>
             <div>
               <h2 className="text-lg font-black text-white tracking-tight">
-                Peringkat Game Paling Trending (7 Hari Terakhir)
+                Peringkat Game Paling Trending (V3.9.8 ID)
               </h2>
               <p className="text-xs text-slate-300">
                 Peringkat otomatis berdasarkan {rankingMode === 'views' ? 'Total Penonton (Views)' : rankingMode === 'efficiency' ? 'Efisiensi Views / Video' : 'Skor Peluang (Opportunity)'}
@@ -152,16 +152,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
           </div>
         </div>
 
-        {/* Tabel Ranking 1 - 9 */}
+        {/* Tabel Ranking Game */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900/90 text-slate-300 uppercase tracking-wider font-extrabold border-b border-slate-800">
               <tr>
                 <th className="p-3.5">Peringkat</th>
                 <th className="p-3.5">Nama Game</th>
-                <th className="p-3.5">Status 7 Hari</th>
-                <th className="p-3.5 text-center">Trend Pergerakan</th>
-                <th className="p-3.5 font-extrabold text-cyan-300">Total Penonton 7 Hari</th>
+                <th className="p-3.5">Status Trend</th>
+                <th className="p-3.5 text-center">Pergerakan Sinyal</th>
+                <th className="p-3.5 font-extrabold text-cyan-300">Total Penonton</th>
                 <th className="p-3.5 font-extrabold text-amber-300">Efisiensi (Views / Video)</th>
                 <th className="p-3.5">Skor Peluang</th>
                 <th className="p-3.5 text-right">Detail</th>
@@ -176,11 +176,18 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
                 >
                   <td className="p-3.5 whitespace-nowrap">{getRankBadge(index)}</td>
                   <td className="p-3.5 font-black text-white capitalize text-sm group-hover:text-cyan-300 transition-colors">
-                    {game.entity}
+                    <div className="flex items-center gap-2">
+                      {game.entity}
+                      {game.activity_state === 'WATCHLIST_INACTIVE' && (
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          WATCHLIST
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3.5 whitespace-nowrap">
                     <span className={`px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${getStatusBadge(game.trend_status)}`}>
-                      {game.trend_status === 'RISING' ? 'NAIK' : game.trend_status === 'NEW' ? 'GAME BARU' : 'MENURUN'}
+                      {game.trend_status === 'RISING' ? 'NAIK' : game.trend_status === 'NEW' ? 'GAME BARU' : game.trend_status === 'DECLINING' ? 'MENURUN' : game.trend_status}
                     </span>
                   </td>
                   <td className="p-3.5 text-center whitespace-nowrap font-bold">
@@ -196,7 +203,17 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
                     )}
                     {game.trend_status === 'DECLINING' && (
                       <span className="text-rose-400 flex items-center justify-center gap-1">
-                        <TrendingDown className="w-3.5 h-3.5" /> {game.view_growth_pct?.toFixed(1)}%
+                        <TrendingDown className="w-3.5 h-3.5" /> {game.view_growth_pct ? `${game.view_growth_pct.toFixed(1)}%` : 'Inaktif (0 Video)'}
+                      </span>
+                    )}
+                    {game.trend_status === 'MIXED' && (
+                      <span className="text-amber-400 flex items-center justify-center gap-1">
+                        <Activity className="w-3.5 h-3.5" /> Tren Campuran
+                      </span>
+                    )}
+                    {game.trend_status === 'INSUFFICIENT_DATA' && (
+                      <span className="text-slate-400 flex items-center justify-center gap-1">
+                        Data Kurang
                       </span>
                     )}
                   </td>
@@ -335,7 +352,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
         </div>
       </div>
 
-      {/* Grafik 3: Leaderboard Efisiensi Rata-rata Penonton per Video (Penyetaraan Sampel) */}
+      {/* Grafik 3: Leaderboard Efisiensi Rata-rata Penonton per Video */}
       <div className="glass-panel p-5 rounded-2xl border border-amber-500/30">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -388,7 +405,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
       <div className="glass-panel p-6 rounded-2xl border-l-4 border-l-cyan-500">
         <div className="flex items-center gap-2.5 text-cyan-400 font-bold text-sm mb-3">
           <Lightbulb className="w-5 h-5" />
-          Temuan Penting Pipeline & Analisis Efisiensi
+          Temuan Penting Pipeline V3.9.8 ID & Analisis Efisiensi
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -419,11 +436,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
 
           <div className="p-3.5 rounded-xl bg-slate-900/80 border border-cyan-500/20 space-y-1.5">
             <div className="flex items-center justify-between text-cyan-400 font-semibold">
-              <span>Penyetaraan Sampel Video</span>
-              <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-[10px]">Penting</span>
+              <span>Sistem 3-in-1 Dataset</span>
+              <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-[10px]">v3.9.8 ID</span>
             </div>
             <p className="text-slate-200 leading-relaxed">
-              Jumlah video per game berbeda secara organik mengikuti trend kreator di YouTube. Gunakan metrik <i>Rata-Rata Penonton / Video</i> untuk membandingkan efisiensi per konten secara adil.
+              Dukungan integrasi 3 file CSV sekaligus (All Valid, Final Hot, dan Watchlist Inactive) dengan penyetaraan sampel dan metrik Current Pulse.
             </p>
           </div>
         </div>
