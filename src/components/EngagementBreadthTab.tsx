@@ -75,7 +75,7 @@ export const EngagementBreadthTab: React.FC<EngagementBreadthTabProps> = ({ reco
                     borderRadius: '12px',
                     color: '#ffffff',
                   }}
-                  formatter={(val: any) => [`${val} poin`, 'Skor Keterlibatan']}
+                  formatter={(val: unknown) => [`${val} poin`, 'Skor Keterlibatan']}
                 />
                 <Bar dataKey="engagement_score" fill="#a855f7" radius={[0, 6, 6, 0]} />
               </BarChart>
@@ -121,7 +121,7 @@ export const EngagementBreadthTab: React.FC<EngagementBreadthTabProps> = ({ reco
                     borderRadius: '12px',
                     color: '#ffffff',
                   }}
-                  formatter={(val: any) => [`${val}%`, 'Pertumbuhan Cakupan']}
+                  formatter={(val: unknown) => [`${val}%`, 'Pertumbuhan Cakupan']}
                 />
                 <Bar dataKey="breadthGrowth" radius={[0, 6, 6, 0]}>
                   {breadthData.map((entry, index) => (

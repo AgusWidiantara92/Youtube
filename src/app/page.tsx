@@ -11,9 +11,16 @@ import { AnalyticsMatrixTab } from '@/components/AnalyticsMatrixTab';
 import { DetailedReportTab } from '@/components/DetailedReportTab';
 import { GameDetailModal } from '@/components/GameDetailModal';
 import { VercelDeployModal } from '@/components/VercelDeployModal';
-import { LayoutDashboard, Compass, Activity, FileText, Flame } from 'lucide-react';
+import { LayoutDashboard, Compass, ScatterChart, FileText, Database } from 'lucide-react';
 
 const dataset = gamingData as unknown as GamingDataset;
+
+const TABS = [
+  { id: 'overview' as const, label: 'Ringkasan Eksekutif', icon: LayoutDashboard },
+  { id: 'explorer' as const, label: 'Penjelajah Game', icon: Compass },
+  { id: 'matrix' as const, label: 'Matriks & Komparasi', icon: ScatterChart },
+  { id: 'report' as const, label: 'Laporan Analisis', icon: FileText },
+];
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'explorer' | 'matrix' | 'report'>('overview');
@@ -23,7 +30,6 @@ export default function DashboardPage() {
 
   const records: GameRecord[] = dataset.final;
 
-  // Export CSV handler
   const exportCsv = () => {
     const headers = [
       'rank',
@@ -61,7 +67,9 @@ export default function DashboardPage() {
       `"${r.analysis_label.replace(/"/g, '""')}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -72,8 +80,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans selection:bg-cyan-500 selection:text-slate-950 pb-16">
-      {/* Top Navigation Bar */}
+    <div className="min-h-screen bg-[#F8F9FA] text-zinc-950 font-sans selection:bg-zinc-900 selection:text-white pb-16">
       <Header
         version={`v${dataset.version}`}
         searchTerm={searchTerm}
@@ -82,85 +89,63 @@ export default function DashboardPage() {
         onExportCsv={exportCsv}
       />
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 pt-6">
-        {/* Banner Dataset Active Focus */}
-        <div className="glass-panel p-4 rounded-2xl mb-6 flex flex-wrap items-center justify-between gap-4 border border-cyan-500/20 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              <Flame className="w-5 h-5 text-amber-400" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                Dataset Fokus: <code className="text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">final_game_trend_v3_8_39_id.csv</code>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
-                  v3.8.39 ID
-                </span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Dashboard sepenuhnya difokuskan pada analisis 10 game dari dataset <code>final_game_trend_v3_8_39_id.csv</code>.
-              </p>
-            </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* Compact Metadata Strip */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500 mb-4">
+          <div className="flex items-center gap-2">
+            <Database className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Sumber dataset:</span>
+            <code className="font-mono text-[11px] text-zinc-700 bg-white px-2 py-0.5 rounded border border-zinc-200">
+              final_game_trend_v3_8_39_id.csv
+            </code>
+          </div>
+          <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-500">
+            <span>Pipeline v{dataset.version}</span>
+            <span className="text-zinc-300">·</span>
+            <span>Pembaruan: {dataset.lastUpdated}</span>
           </div>
         </div>
 
-        {/* KPI Cards Banner */}
+        {/* Unified KPI Metric Strip */}
         <KpiCards kpi={dataset.kpi} records={records} />
 
-        {/* Tab Switcher Navigation */}
-        <div className="flex flex-wrap items-center gap-2 mb-6 border-b border-slate-800 pb-3">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'overview'
-                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            Ringkasan Eksekutif
-          </button>
+        {/* Editorial Underline Navigation Tabs */}
+        <nav
+          aria-label="Navigasi Dashboard"
+          className="flex items-center gap-1 border-b border-zinc-200 mb-6 overflow-x-auto"
+        >
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center gap-2 px-3.5 py-2.5 text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  isActive
+                    ? 'text-zinc-950'
+                    : 'text-zinc-500 hover:text-zinc-800'
+                }`}
+              >
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`} />
+                <span>{tab.label}</span>
+                {isActive && (
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 bg-zinc-950 rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-          <button
-            onClick={() => setActiveTab('explorer')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'explorer'
-                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            Penjelajah Game
-          </button>
-
-          <button
-            onClick={() => setActiveTab('matrix')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'matrix'
-                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            Matriks & Grafik Komparasi
-          </button>
-
-          <button
-            onClick={() => setActiveTab('report')}
-            className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-              activeTab === 'report'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <FileText className="w-4 h-4 text-purple-300" />
-            Laporan Analisis Lengkap
-          </button>
-        </div>
-
-        {/* Display Tab Active */}
+        {/* Active Tab View */}
         {activeTab === 'overview' && (
-          <OverviewTab records={records} onSelectGame={(g) => setSelectedGame(g)} />
+          <OverviewTab
+            records={records}
+            version={dataset.version}
+            searchTerm={searchTerm}
+            onSelectGame={(g) => setSelectedGame(g)}
+          />
         )}
 
         {activeTab === 'explorer' && (
@@ -177,14 +162,16 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'report' && (
-          <DetailedReportTab records={records} kpi={dataset.kpi} />
+          <DetailedReportTab records={records} kpi={dataset.kpi} version={dataset.version} />
         )}
       </main>
 
-      {/* Game Detail Drawer Modal */}
-      <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-zinc-200 flex flex-wrap items-center justify-between gap-2 text-[11px] text-zinc-500">
+        <span>YouTube Gaming Trend Analytics · PT Pandora Digital Entertainment</span>
+        <span className="font-mono">Pipeline v{dataset.version} · {records.length} entitas tervalidasi</span>
+      </footer>
 
-      {/* Vercel Deploy Guide Modal */}
+      <GameDetailModal game={selectedGame} onClose={() => setSelectedGame(null)} />
       <VercelDeployModal isOpen={isDeployModalOpen} onClose={() => setIsDeployModalOpen(false)} />
     </div>
   );

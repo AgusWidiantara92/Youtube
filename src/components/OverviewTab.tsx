@@ -12,45 +12,92 @@ import {
   Cell,
   PieChart,
   Pie,
+  CartesianGrid,
 } from 'recharts';
-import { BarChart3, PieChart as PieIcon, Lightbulb, Zap, Trophy, TrendingUp, Sparkles, TrendingDown, ChevronRight, Eye, Award, Activity } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  ArrowUpRight,
+  Minus,
+} from 'lucide-react';
 
 interface OverviewTabProps {
   records: GameRecord[];
+  version?: string;
+  searchTerm?: string;
   onSelectGame: (game: GameRecord) => void;
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  RISING: '#10b981', // emerald
-  NEW: '#a855f7',    // purple
-  DECLINING: '#f43f5e', // rose
-  MIXED: '#f59e0b',    // amber
-  INSUFFICIENT_DATA: '#64748b' // slate
+  RISING: '#059669',
+  NEW: '#2563eb',
+  DECLINING: '#e11d48',
+  MIXED: '#d97706',
+  INSUFFICIENT_DATA: '#71717a',
 };
 
 const STATUS_LABELS_ID: Record<string, string> = {
-  RISING: 'Naik (Rising)',
-  NEW: 'Baru (New)',
-  DECLINING: 'Menurun (Declining)',
-  MIXED: 'Campuran (Mixed)',
-  INSUFFICIENT_DATA: 'Data Kurang'
+  RISING: 'Naik',
+  NEW: 'Baru',
+  DECLINING: 'Menurun',
+  MIXED: 'Campuran',
+  INSUFFICIENT_DATA: 'Data Kurang',
 };
 
-export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame }) => {
+const getStatusBadgeClasses = (status: TrendStatus) => {
+  switch (status) {
+    case 'RISING':
+      return {
+        pill: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        dot: 'bg-emerald-500',
+        label: 'Naik',
+      };
+    case 'NEW':
+      return {
+        pill: 'bg-blue-50 text-blue-700 border-blue-200',
+        dot: 'bg-blue-500',
+        label: 'Baru',
+      };
+    case 'DECLINING':
+      return {
+        pill: 'bg-rose-50 text-rose-700 border-rose-200',
+        dot: 'bg-rose-500',
+        label: 'Menurun',
+      };
+    case 'MIXED':
+      return {
+        pill: 'bg-amber-50 text-amber-700 border-amber-200',
+        dot: 'bg-amber-500',
+        label: 'Campuran',
+      };
+    default:
+      return {
+        pill: 'bg-zinc-100 text-zinc-600 border-zinc-200',
+        dot: 'bg-zinc-400',
+        label: 'Data Kurang',
+      };
+  }
+};
+
+export const OverviewTab: React.FC<OverviewTabProps> = ({
+  records,
+  version = '3.8.39 ID',
+  searchTerm = '',
+  onSelectGame,
+}) => {
   const [rankingMode, setRankingMode] = useState<'views' | 'efficiency' | 'opportunity'>('views');
 
-  // 1. Data Peringkat Dinamis
-  const rankedGames = [...records].sort((a, b) => {
-    if (rankingMode === 'views') {
-      return b.recent_views - a.recent_views;
-    }
-    if (rankingMode === 'efficiency') {
-      return b.avg_views_per_video - a.avg_views_per_video;
-    }
+  const filteredRecords = searchTerm.trim()
+    ? records.filter((r) => r.entity.toLowerCase().includes(searchTerm.toLowerCase()))
+    : records;
+
+  const rankedGames = [...filteredRecords].sort((a, b) => {
+    if (rankingMode === 'views') return b.recent_views - a.recent_views;
+    if (rankingMode === 'efficiency') return b.avg_views_per_video - a.avg_views_per_video;
     return b.opportunity_score - a.opportunity_score;
   });
 
-  // 2. Data Distribusi Status
   const statusCounts = records.reduce((acc, curr) => {
     acc[curr.trend_status] = (acc[curr.trend_status] || 0) + 1;
     return acc;
@@ -59,195 +106,242 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
   const pieData = Object.keys(statusCounts).map((status) => ({
     name: STATUS_LABELS_ID[status] || status,
     value: statusCounts[status],
-    color: STATUS_COLORS[status] || '#94a3b8',
+    color: STATUS_COLORS[status] || '#71717a',
   }));
 
-  // 3. Data Leaderboard diurutkan berdasarkan Skor Peluang
   const sortedByOpp = [...records].sort((a, b) => b.opportunity_score - a.opportunity_score);
-
-  // 4. Data Leaderboard Efisiensi (Rata-rata Penonton per Video)
   const sortedByEfficiency = [...records].sort((a, b) => b.avg_views_per_video - a.avg_views_per_video);
 
-  // 5. Wawasan Analitis Otomatis
-  const risingGame = records.find((r) => r.trend_status === 'RISING');
+  const risingGames = records
+    .filter((r) => r.trend_status === 'RISING')
+    .sort((a, b) => b.opportunity_score - a.opportunity_score);
+  const topRising = risingGames[0];
   const topEfficiencyGame = sortedByEfficiency[0];
+  const topViewsGame = [...records].sort((a, b) => b.recent_views - a.recent_views)[0];
 
-  const getRankBadge = (index: number) => {
-    const rank = index + 1;
-    if (rank === 1) return <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20">🥇 #1</span>;
-    if (rank === 2) return <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-slate-300 to-slate-400 text-slate-950 font-black text-xs shadow-md">🥈 #2</span>;
-    if (rank === 3) return <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-700 to-amber-600 text-white font-black text-xs shadow-md">🥉 #3</span>;
-    return <span className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-300 font-extrabold text-xs">#{rank}</span>;
-  };
-
-  const getStatusBadge = (status: TrendStatus) => {
-    switch (status) {
-      case 'RISING':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'NEW':
-        return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
-      case 'DECLINING':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-      default:
-        return 'bg-slate-800 text-slate-300 border-slate-700';
-    }
-  };
+  const modeSubtitle =
+    rankingMode === 'views'
+      ? 'Diurutkan berdasarkan total penayangan 7 hari terakhir'
+      : rankingMode === 'efficiency'
+      ? 'Diurutkan berdasarkan rata-rata penayangan per video sampel'
+      : 'Diurutkan berdasarkan skor peluang komposit (skala 0 hingga 100)';
 
   return (
     <div className="space-y-6">
-      {/* SEKSI UTAMA: Tabel Peringkat Game Trending */}
-      <div className="glass-panel p-6 rounded-3xl border border-cyan-500/30 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 shadow-md shadow-amber-500/20">
-              <Trophy className="w-5 h-5 font-black" />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-white tracking-tight">
-                Peringkat Game Paling Trending (V3.9.8 ID)
-              </h2>
-              <p className="text-xs text-slate-300">
-                Peringkat otomatis berdasarkan {rankingMode === 'views' ? 'Total Penonton (Views)' : rankingMode === 'efficiency' ? 'Efisiensi Views / Video' : 'Skor Peluang (Opportunity)'}
-              </p>
-            </div>
+      {/* Main Ranking Table */}
+      <section className="bg-white border border-zinc-200 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="px-5 py-4 border-b border-zinc-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-950 tracking-tight">
+              Peringkat Game YouTube Gaming (Pipeline v{version})
+            </h2>
+            <p className="text-xs text-zinc-500 mt-0.5">{modeSubtitle}</p>
           </div>
 
-          {/* Mode Switcher Peringkat */}
-          <div className="flex items-center bg-slate-900/90 border border-slate-800 rounded-xl p-1 text-xs">
+          {/* Segmented Control */}
+          <div className="inline-flex items-center bg-zinc-100 border border-zinc-200 rounded-lg p-0.5 text-xs self-start sm:self-auto">
             <button
+              type="button"
               onClick={() => setRankingMode('views')}
-              className={`flex items-center gap-1 px-3 py-1.5 font-bold rounded-lg transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-colors cursor-pointer ${
                 rankingMode === 'views'
-                  ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              <Eye className="w-3.5 h-3.5" />
-              Total Penonton (Views)
+              Total Penonton
             </button>
-
             <button
+              type="button"
               onClick={() => setRankingMode('efficiency')}
-              className={`flex items-center gap-1 px-3 py-1.5 font-bold rounded-lg transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-colors cursor-pointer ${
                 rankingMode === 'efficiency'
-                  ? 'bg-gradient-to-r from-amber-600 to-yellow-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              <Zap className="w-3.5 h-3.5" />
               Views / Video
             </button>
-
             <button
+              type="button"
               onClick={() => setRankingMode('opportunity')}
-              className={`flex items-center gap-1 px-3 py-1.5 font-bold rounded-lg transition-all ${
+              className={`px-3 py-1.5 font-medium rounded-md transition-colors cursor-pointer ${
                 rankingMode === 'opportunity'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.06)]'
+                  : 'text-zinc-600 hover:text-zinc-900'
               }`}
             >
-              <Award className="w-3.5 h-3.5" />
               Skor Peluang
             </button>
           </div>
         </div>
 
-        {/* Tabel Ranking Game */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 text-slate-300 uppercase tracking-wider font-extrabold border-b border-slate-800">
-              <tr>
-                <th className="p-3.5">Peringkat</th>
-                <th className="p-3.5">Nama Game</th>
-                <th className="p-3.5">Status Trend</th>
-                <th className="p-3.5 text-center">Pergerakan Sinyal</th>
-                <th className="p-3.5 font-extrabold text-cyan-300">Total Penonton</th>
-                <th className="p-3.5 font-extrabold text-amber-300">Efisiensi (Views / Video)</th>
-                <th className="p-3.5">Skor Peluang</th>
-                <th className="p-3.5 text-right">Detail</th>
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-zinc-50/80 text-zinc-500 border-b border-zinc-200 text-[11px] uppercase tracking-wider">
+                <th className="py-3 pl-5 pr-3 font-medium w-14">#</th>
+                <th className="py-3 px-3 font-medium">Nama Game</th>
+                <th className="py-3 px-3 font-medium">Status</th>
+                <th className="py-3 px-3 font-medium text-right">Pertumbuhan</th>
+                <th className="py-3 px-3 font-medium text-right">Total Penonton</th>
+                <th className="py-3 px-3 font-medium text-right">Views / Video</th>
+                <th className="py-3 px-3 font-medium">Skor Peluang</th>
+                <th className="py-3 pl-3 pr-5 font-medium text-right w-20">Detail</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {rankedGames.map((game, index) => (
-                <tr
-                  key={game.entity}
-                  onClick={() => onSelectGame(game)}
-                  className="hover:bg-slate-800/60 cursor-pointer transition-colors group"
-                >
-                  <td className="p-3.5 whitespace-nowrap">{getRankBadge(index)}</td>
-                  <td className="p-3.5 font-black text-white capitalize text-sm group-hover:text-cyan-300 transition-colors">
-                    <div className="flex items-center gap-2">
-                      {game.entity}
-                      {game.activity_state === 'WATCHLIST_INACTIVE' && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          WATCHLIST
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-3.5 whitespace-nowrap">
-                    <span className={`px-2.5 py-1 text-[11px] font-extrabold rounded-lg border ${getStatusBadge(game.trend_status)}`}>
-                      {game.trend_status === 'RISING' ? 'NAIK' : game.trend_status === 'NEW' ? 'GAME BARU' : game.trend_status === 'DECLINING' ? 'MENURUN' : game.trend_status}
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-center whitespace-nowrap font-bold">
-                    {game.trend_status === 'RISING' && (
-                      <span className="text-emerald-400 flex items-center justify-center gap-1">
-                        <TrendingUp className="w-3.5 h-3.5" /> +{game.view_growth_pct?.toFixed(1)}%
-                      </span>
-                    )}
-                    {game.trend_status === 'NEW' && (
-                      <span className="text-purple-300 flex items-center justify-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" /> Rilis Baru ({(game.recent_views / 1000000).toFixed(2)}M)
-                      </span>
-                    )}
-                    {game.trend_status === 'DECLINING' && (
-                      <span className="text-rose-400 flex items-center justify-center gap-1">
-                        <TrendingDown className="w-3.5 h-3.5" /> {game.view_growth_pct ? `${game.view_growth_pct.toFixed(1)}%` : 'Inaktif (0 Video)'}
-                      </span>
-                    )}
-                    {game.trend_status === 'MIXED' && (
-                      <span className="text-amber-400 flex items-center justify-center gap-1">
-                        <Activity className="w-3.5 h-3.5" /> Tren Campuran
-                      </span>
-                    )}
-                    {game.trend_status === 'INSUFFICIENT_DATA' && (
-                      <span className="text-slate-400 flex items-center justify-center gap-1">
-                        Data Kurang
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3.5 font-black text-cyan-300 whitespace-nowrap text-sm">
-                    {game.recent_views.toLocaleString()} views
-                  </td>
-                  <td className="p-3.5 font-black text-amber-300 whitespace-nowrap">
-                    {game.avg_views_per_video.toLocaleString()} views/video
-                  </td>
-                  <td className="p-3.5 font-extrabold text-purple-300 whitespace-nowrap">
-                    {game.opportunity_score} <span className="text-[10px] text-slate-400 font-normal">pts</span>
-                  </td>
-                  <td className="p-3.5 text-right font-bold text-cyan-400 group-hover:translate-x-1 transition-transform">
-                    <span className="inline-flex items-center gap-0.5">
-                      Lihat <ChevronRight className="w-4 h-4" />
-                    </span>
+            <tbody className="divide-y divide-zinc-100">
+              {rankedGames.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-10 text-center text-zinc-500 text-xs">
+                    Tidak ada game yang cocok dengan kata kunci &ldquo;{searchTerm}&rdquo;.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                rankedGames.map((game, index) => {
+                  const badge = getStatusBadgeClasses(game.trend_status);
+                  const rankNum = String(index + 1).padStart(2, '0');
+                  return (
+                    <tr
+                      key={game.entity}
+                      onClick={() => onSelectGame(game)}
+                      className="hover:bg-zinc-50/90 cursor-pointer transition-colors group"
+                    >
+                      <td className="py-3.5 pl-5 pr-3 font-mono text-xs text-zinc-400 tabular-nums">
+                        <span
+                          className={
+                            index < 3
+                              ? 'font-semibold text-zinc-900'
+                              : 'text-zinc-400'
+                          }
+                        >
+                          {rankNum}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-zinc-950 capitalize text-[13px] group-hover:text-blue-600 transition-colors">
+                            {game.entity}
+                          </span>
+                          <span className="text-[11px] text-zinc-400 font-mono">
+                            {game.recent_videos} vid
+                          </span>
+                          {game.activity_state === 'WATCHLIST_INACTIVE' && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-amber-50 text-amber-700 border border-amber-200">
+                              Watchlist
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-md border ${badge.pill}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-right whitespace-nowrap font-mono tabular-nums">
+                        {game.trend_status === 'RISING' && game.view_growth_pct !== null && (
+                          <span className="inline-flex items-center justify-end gap-1 text-emerald-700 font-medium">
+                            <TrendingUp className="w-3.5 h-3.5" />
+                            +{game.view_growth_pct.toFixed(1)}%
+                          </span>
+                        )}
+                        {game.trend_status === 'NEW' && (
+                          <span className="inline-flex items-center justify-end gap-1 text-blue-700 font-medium">
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                            Rilis Baru
+                          </span>
+                        )}
+                        {game.trend_status === 'DECLINING' && (
+                          <span className="inline-flex items-center justify-end gap-1 text-rose-700 font-medium">
+                            <TrendingDown className="w-3.5 h-3.5" />
+                            {game.view_growth_pct !== null
+                              ? `${game.view_growth_pct.toFixed(1)}%`
+                              : 'Inaktif'}
+                          </span>
+                        )}
+                        {game.trend_status !== 'RISING' &&
+                          game.trend_status !== 'NEW' &&
+                          game.trend_status !== 'DECLINING' && (
+                            <span className="inline-flex items-center justify-end gap-1 text-zinc-500">
+                              <Minus className="w-3 h-3" />
+                              {game.view_growth_pct !== null
+                                ? `${game.view_growth_pct > 0 ? '+' : ''}${game.view_growth_pct.toFixed(1)}%`
+                                : 'N/A'}
+                            </span>
+                          )}
+                      </td>
+                      <td
+                        className={`py-3.5 px-3 text-right font-mono tabular-nums whitespace-nowrap ${
+                          rankingMode === 'views'
+                            ? 'font-semibold text-zinc-950'
+                            : 'text-zinc-700'
+                        }`}
+                      >
+                        {game.recent_views.toLocaleString('id-ID')}
+                      </td>
+                      <td
+                        className={`py-3.5 px-3 text-right font-mono tabular-nums whitespace-nowrap ${
+                          rankingMode === 'efficiency'
+                            ? 'font-semibold text-zinc-950'
+                            : 'text-zinc-700'
+                        }`}
+                      >
+                        {Math.round(game.avg_views_per_video).toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5 min-w-[110px]">
+                          <span
+                            className={`font-mono tabular-nums w-9 ${
+                              rankingMode === 'opportunity'
+                                ? 'font-semibold text-zinc-950'
+                                : 'text-zinc-700'
+                            }`}
+                          >
+                            {game.opportunity_score.toFixed(1)}
+                          </span>
+                          <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden max-w-[72px]">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${Math.min(game.opportunity_score, 100)}%`,
+                                backgroundColor: STATUS_COLORS[game.trend_status] || '#18181b',
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3.5 pl-3 pr-5 text-right whitespace-nowrap">
+                        <span className="inline-flex items-center gap-0.5 text-zinc-500 group-hover:text-zinc-950 font-medium transition-colors">
+                          Rincian
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* Grid Grafik Utama */}
+      {/* Primary Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Grafik 1: Leaderboard Skor Peluang Komposit */}
-        <div className="lg:col-span-7 glass-panel p-5 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-base font-bold text-white">Skor Peluang & Profil Komposit</h2>
+        {/* Chart 1: Opportunity Score Bar Chart */}
+        <section className="lg:col-span-7 bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-950 tracking-tight">
+                Skor Peluang Komposit
+              </h2>
+              <p className="text-xs text-zinc-500">
+                Gabungan popularitas, momentum pertumbuhan, dan bukti sampel
+              </p>
             </div>
-            <span className="text-xs text-slate-300">Skala: 0 – 100</span>
+            <span className="text-[11px] font-mono text-zinc-400">Skala 0 hingga 100</span>
           </div>
 
           <div className="h-80 w-full">
@@ -255,59 +349,66 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
               <BarChart
                 layout="vertical"
                 data={sortedByOpp}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
               >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f4f4f5" />
                 <XAxis
                   type="number"
                   domain={[0, 100]}
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: '#e4e4e7' }}
                   tickLine={false}
-                  tick={{ fill: '#cbd5e1', fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: '#71717a', fontSize: 11 }}
                 />
                 <YAxis
                   type="category"
                   dataKey="entity"
-                  axisLine={{ stroke: '#334155' }}
+                  axisLine={{ stroke: '#e4e4e7' }}
                   tickLine={false}
-                  tick={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
-                  width={140}
+                  tick={{ fill: '#18181b', fontSize: 12, fontWeight: 500 }}
+                  width={136}
                 />
                 <Tooltip
+                  cursor={{ fill: '#f4f4f5' }}
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '12px',
-                    color: '#ffffff',
+                    backgroundColor: '#ffffff',
+                    borderColor: '#e4e4e7',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    color: '#09090b',
                     fontSize: '12px',
                   }}
-                  itemStyle={{ color: '#38bdf8', fontWeight: 600 }}
-                  labelStyle={{ color: '#ffffff', fontWeight: 700 }}
-                  formatter={(value: any, name?: any, item?: any) => [
+                  itemStyle={{ color: '#18181b', fontWeight: 600 }}
+                  labelStyle={{ color: '#52525b', fontWeight: 600, textTransform: 'capitalize' }}
+                  formatter={(value: unknown, _name?: unknown, item?: { payload?: GameRecord }) => [
                     `${value} poin`,
-                    `Skor Peluang (${item?.payload?.analysis_label || ''})`,
+                    item?.payload?.analysis_label || 'Skor Peluang',
                   ]}
                 />
-                <Bar dataKey="opportunity_score" radius={[0, 6, 6, 0]}>
+                <Bar dataKey="opportunity_score" radius={[0, 4, 4, 0]} barSize={18}>
                   {sortedByOpp.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={STATUS_COLORS[entry.trend_status] || '#06b6d4'}
+                      fill={STATUS_COLORS[entry.trend_status] || '#18181b'}
                     />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </section>
 
-        {/* Grafik 2: Rincian Status Trend */}
-        <div className="lg:col-span-5 glass-panel p-5 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-purple-400" />
-              <h2 className="text-base font-bold text-white">Proporsi Status Trend</h2>
+        {/* Chart 2: Trend Status Proportion */}
+        <section className="lg:col-span-5 bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
+          <div className="flex items-baseline justify-between mb-2">
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-950 tracking-tight">
+                Distribusi Status Tren
+              </h2>
+              <p className="text-xs text-zinc-500">
+                Proporsi klasifikasi arah pergerakan pasar
+              </p>
             </div>
-            <span className="text-xs text-slate-300">Total {records.length} game</span>
+            <span className="text-[11px] font-mono text-zinc-400">{records.length} entitas</span>
           </div>
 
           <div className="h-56 w-full relative flex items-center justify-center">
@@ -317,10 +418,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={5}
+                  innerRadius={56}
+                  outerRadius={82}
+                  paddingAngle={3}
                   dataKey="value"
+                  stroke="#ffffff"
+                  strokeWidth={2}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`pie-cell-${index}`} fill={entry.color} />
@@ -328,38 +431,59 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#0f172a',
-                    borderColor: '#334155',
-                    borderRadius: '12px',
-                    color: '#ffffff',
+                    backgroundColor: '#ffffff',
+                    borderColor: '#e4e4e7',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    color: '#09090b',
+                    fontSize: '12px',
                   }}
-                  itemStyle={{ color: '#a855f7', fontWeight: 600 }}
-                  labelStyle={{ color: '#ffffff', fontWeight: 700 }}
+                  formatter={(value: unknown) => [`${value} game`, 'Jumlah']}
                 />
               </PieChart>
             </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-semibold font-mono text-zinc-950 tabular-nums">
+                {records.length}
+              </span>
+              <span className="text-[11px] text-zinc-500">Total Game</span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mt-2 pt-3 border-t border-slate-800/80">
+          <div className="grid grid-cols-2 gap-2.5 mt-2 pt-4 border-t border-zinc-100">
             {pieData.map((item) => (
-              <div key={item.name} className="flex items-center gap-2 text-xs">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-slate-200 font-semibold capitalize">{item.name}:</span>
-                <span className="font-extrabold text-white">{item.value}</span>
+              <div
+                key={item.name}
+                className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 text-xs"
+              >
+                <span className="flex items-center gap-2 text-zinc-700 font-medium">
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  {item.name}
+                </span>
+                <span className="font-mono font-semibold text-zinc-950 tabular-nums">
+                  {item.value}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Grafik 3: Leaderboard Efisiensi Rata-rata Penonton per Video */}
-      <div className="glass-panel p-5 rounded-2xl border border-amber-500/30">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400" />
-            <h2 className="text-base font-bold text-white">Efisiensi Rata-Rata Penonton / Video (Penyetaraan Sampel)</h2>
+      {/* Chart 3: Efficiency Views per Video */}
+      <section className="bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-950 tracking-tight">
+              Efisiensi Rata-Rata Penonton per Video
+            </h2>
+            <p className="text-xs text-zinc-500">
+              Penyetaraan sampel dengan membagi total penayangan terhadap jumlah video aktif
+            </p>
           </div>
-          <span className="text-xs text-slate-300">Penonton Terbagi Jumlah Video Sampel</span>
+          <span className="text-[11px] font-mono text-zinc-400">Satuan: views/video</span>
         </div>
 
         <div className="h-80 w-full">
@@ -367,84 +491,120 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({ records, onSelectGame 
             <BarChart
               layout="vertical"
               data={sortedByEfficiency}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
             >
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f4f4f5" />
               <XAxis
                 type="number"
-                axisLine={{ stroke: '#334155' }}
+                axisLine={{ stroke: '#e4e4e7' }}
                 tickLine={false}
-                tick={{ fill: '#cbd5e1', fontSize: 11, fontWeight: 500 }}
+                tick={{ fill: '#71717a', fontSize: 11 }}
+                tickFormatter={(v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`)}
               />
               <YAxis
                 type="category"
                 dataKey="entity"
-                axisLine={{ stroke: '#334155' }}
+                axisLine={{ stroke: '#e4e4e7' }}
                 tickLine={false}
-                tick={{ fill: '#ffffff', fontSize: 12, fontWeight: 600 }}
-                width={140}
+                tick={{ fill: '#18181b', fontSize: 12, fontWeight: 500 }}
+                width={136}
               />
               <Tooltip
+                cursor={{ fill: '#f4f4f5' }}
                 contentStyle={{
-                  backgroundColor: '#0f172a',
-                  borderColor: '#334155',
-                  borderRadius: '12px',
-                  color: '#ffffff',
+                  backgroundColor: '#ffffff',
+                  borderColor: '#e4e4e7',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  color: '#09090b',
                   fontSize: '12px',
                 }}
-                itemStyle={{ color: '#f59e0b', fontWeight: 600 }}
-                labelStyle={{ color: '#ffffff', fontWeight: 700 }}
-                formatter={(val: any) => [`${Number(val).toLocaleString()} views/video`, 'Rata-Rata Penonton']}
+                labelStyle={{ color: '#52525b', fontWeight: 600, textTransform: 'capitalize' }}
+                formatter={(val: unknown) => [
+                  `${Math.round(Number(val)).toLocaleString('id-ID')} views/video`,
+                  'Rata-Rata Penonton',
+                ]}
               />
-              <Bar dataKey="avg_views_per_video" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+              <Bar dataKey="avg_views_per_video" fill="#18181b" radius={[0, 4, 4, 0]} barSize={18} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </section>
 
-      {/* Kartu Catatan Deskriptif Otomatis */}
-      <div className="glass-panel p-6 rounded-2xl border-l-4 border-l-cyan-500">
-        <div className="flex items-center gap-2.5 text-cyan-400 font-bold text-sm mb-3">
-          <Lightbulb className="w-5 h-5" />
-          Temuan Penting Pipeline V3.9.8 ID & Analisis Efisiensi
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          {risingGame && (
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-emerald-500/20 space-y-1.5">
-              <div className="flex items-center justify-between text-emerald-400 font-semibold">
-                <span className="capitalize text-white font-bold">{risingGame.entity}</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-[10px]">Sinyal Naik Terkuat</span>
-              </div>
-              <p className="text-slate-200 leading-relaxed">
-                Pertumbuhan penonton +{risingGame.view_growth_pct?.toFixed(1)}%,
-                pertumbuhan komentar +{risingGame.comment_growth_pct?.toFixed(1)}%, skor momentum {risingGame.momentum_score}.
-              </p>
+      {/* Analytical Key Takeaways */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {topRising && (
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-emerald-700">
+                Momentum Tertinggi
+              </span>
+              <span className="text-[11px] font-mono text-zinc-500">
+                Skor {topRising.opportunity_score}
+              </span>
             </div>
-          )}
-
-          {topEfficiencyGame && (
-            <div className="p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/20 space-y-1.5">
-              <div className="flex items-center justify-between text-amber-400 font-semibold">
-                <span className="capitalize text-white font-bold">{topEfficiencyGame.entity}</span>
-                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-[10px]">Efisiensi Konten Teratas</span>
-              </div>
-              <p className="text-slate-200 leading-relaxed">
-                Rata-rata penonton per video tertinggi: {topEfficiencyGame.avg_views_per_video.toLocaleString()} views/video dari {topEfficiencyGame.recent_videos} video.
-              </p>
-            </div>
-          )}
-
-          <div className="p-3.5 rounded-xl bg-slate-900/80 border border-cyan-500/20 space-y-1.5">
-            <div className="flex items-center justify-between text-cyan-400 font-semibold">
-              <span>Sistem 3-in-1 Dataset</span>
-              <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-[10px]">v3.9.8 ID</span>
-            </div>
-            <p className="text-slate-200 leading-relaxed">
-              Dukungan integrasi 3 file CSV sekaligus (All Valid, Final Hot, dan Watchlist Inactive) dengan penyetaraan sampel dan metrik Current Pulse.
+            <h3 className="text-sm font-semibold text-zinc-950 capitalize mb-1.5">
+              {topRising.entity}
+            </h3>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Pertumbuhan penonton{' '}
+              <span className="font-mono font-medium text-emerald-700">
+                +{topRising.view_growth_pct?.toFixed(1)}%
+              </span>{' '}
+              dengan skor momentum{' '}
+              <span className="font-mono font-medium text-zinc-900">
+                {topRising.momentum_score ?? 'N/A'}
+              </span>{' '}
+              dari {topRising.recent_videos} video pada {topRising.recent_channels} kanal aktif.
             </p>
           </div>
-        </div>
-      </div>
+        )}
+
+        {topEfficiencyGame && (
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-600">
+                Efisiensi Konten Teratas
+              </span>
+              <span className="text-[11px] font-mono text-zinc-500">
+                {topEfficiencyGame.recent_videos} video
+              </span>
+            </div>
+            <h3 className="text-sm font-semibold text-zinc-950 capitalize mb-1.5">
+              {topEfficiencyGame.entity}
+            </h3>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Meraih rata-rata{' '}
+              <span className="font-mono font-medium text-zinc-950">
+                {Math.round(topEfficiencyGame.avg_views_per_video).toLocaleString('id-ID')} views/video
+              </span>{' '}
+              dengan total jangkauan {topEfficiencyGame.recent_views.toLocaleString('id-ID')} penonton.
+            </p>
+          </div>
+        )}
+
+        {topViewsGame && (
+          <div className="bg-white border border-zinc-200 rounded-xl p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-blue-700">
+                Volume Penonton Terbesar
+              </span>
+              <span className="text-[11px] font-mono text-zinc-500">v{version}</span>
+            </div>
+            <h3 className="text-sm font-semibold text-zinc-950 capitalize mb-1.5">
+              {topViewsGame.entity}
+            </h3>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Mengumpulkan{' '}
+              <span className="font-mono font-medium text-zinc-950">
+                {topViewsGame.recent_views.toLocaleString('id-ID')} views
+              </span>{' '}
+              dalam jendela pengamatan 7 hari terakhir dengan tingkat bukti{' '}
+              <span className="font-medium text-zinc-800">{topViewsGame.evidence_level}</span>.
+            </p>
+          </div>
+        )}
+      </section>
     </div>
   );
 };

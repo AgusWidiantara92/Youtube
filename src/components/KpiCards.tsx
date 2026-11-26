@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { GameRecord, KpiSummary } from '@/types/gaming';
-import { TrendingUp, Flame, Eye, Award, Zap, ShieldCheck } from 'lucide-react';
 
 interface KpiCardsProps {
   kpi: KpiSummary;
@@ -10,109 +9,123 @@ interface KpiCardsProps {
 }
 
 export const KpiCards: React.FC<KpiCardsProps> = ({ records }) => {
-  const topOpportunityGame = records.reduce((prev, current) => 
-    (current.opportunity_score > prev.opportunity_score) ? current : prev
-  , records[0] || {} as GameRecord);
+  const topOpportunityGame = records.reduce(
+    (prev, current) =>
+      current.opportunity_score > prev.opportunity_score ? current : prev,
+    records[0] || ({} as GameRecord)
+  );
 
-  const topEfficiencyGame = records.reduce((prev, current) =>
-    ((current.avg_views_per_video || 0) > (prev.avg_views_per_video || 0)) ? current : prev
-  , records[0] || {} as GameRecord);
+  const topEfficiencyGame = records.reduce(
+    (prev, current) =>
+      (current.avg_views_per_video || 0) > (prev.avg_views_per_video || 0)
+        ? current
+        : prev,
+    records[0] || ({} as GameRecord)
+  );
 
-  const risingCount = records.filter(r => r.trend_status === 'RISING').length;
-  const newCount = records.filter(r => r.trend_status === 'NEW').length;
-  const decliningCount = records.filter(r => r.trend_status === 'DECLINING').length;
+  const risingCount = records.filter((r) => r.trend_status === 'RISING').length;
+  const newCount = records.filter((r) => r.trend_status === 'NEW').length;
+  const decliningCount = records.filter((r) => r.trend_status === 'DECLINING').length;
+  const otherCount = records.length - risingCount - newCount - decliningCount;
 
   const totalViews = records.reduce((acc, curr) => acc + (curr.recent_views || 0), 0);
+  const totalVideos = records.reduce((acc, curr) => acc + (curr.recent_videos || 0), 0);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {/* Kartu 1: Ringkasan Dataset */}
-      <div className="glass-panel glass-panel-hover p-5 rounded-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-cyan-400">
-          <TrendingUp className="w-16 h-16" />
+    <section
+      aria-label="Ringkasan Indikator Utama"
+      className="bg-white border border-zinc-200 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] mb-6 overflow-hidden"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-zinc-200">
+        {/* KPI 1: Ringkasan Dataset */}
+        <div className="p-5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-2">
+            Cakupan Entitas Game
+          </p>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-2xl font-semibold text-zinc-950 tracking-tight tabular-nums font-mono">
+              {records.length}
+            </span>
+            <span className="text-xs text-zinc-500">game kanonikal</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-medium tabular-nums">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              {risingCount} Naik
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/80 font-medium tabular-nums">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              {newCount} Baru
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200/80 font-medium tabular-nums">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              {decliningCount} Turun
+            </span>
+            {otherCount > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 font-medium tabular-nums">
+                {otherCount} Lainnya
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-cyan-400 mb-1 font-semibold text-xs tracking-wider uppercase">
-          <Flame className="w-4 h-4" />
-          Ringkasan Dataset
-        </div>
-        <div className="text-3xl font-black text-white tracking-tight mb-2">
-          {records.length} <span className="text-sm font-normal text-slate-400">Game</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5 text-[11px]">
-          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-            {risingCount} Naik
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-400 border border-purple-500/20 font-medium">
-            {newCount} Game Baru
-          </span>
-          <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20 font-medium">
-            {decliningCount} Menurun
-          </span>
-        </div>
-      </div>
 
-      {/* Kartu 2: Pemimpin Skor Peluang */}
-      <div className="glass-panel glass-panel-hover p-5 rounded-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-purple-400">
-          <Award className="w-16 h-16" />
+        {/* KPI 2: Pemimpin Peluang Utama */}
+        <div className="p-5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-2">
+            Pemimpin Skor Peluang
+          </p>
+          <div className="text-xl font-semibold text-zinc-950 tracking-tight capitalize truncate mb-2">
+            {topOpportunityGame?.entity || 'N/A'}
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-mono font-semibold text-zinc-900 tabular-nums">
+              {topOpportunityGame?.opportunity_score ?? 0}
+              <span className="text-zinc-400 font-normal">/100</span>
+            </span>
+            <span className="text-zinc-300">·</span>
+            <span className="text-zinc-600 truncate">
+              {topOpportunityGame?.analysis_label || '-'}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-purple-400 mb-1 font-semibold text-xs tracking-wider uppercase">
-          <Award className="w-4 h-4" />
-          Pemimpin Peluang Utama
-        </div>
-        <div className="text-2xl font-extrabold text-white tracking-tight capitalize truncate mb-1">
-          {topOpportunityGame?.entity || 'N/A'}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-purple-300">
-            {topOpportunityGame?.opportunity_score ?? 0}
-          </span>
-          <span className="text-xs text-slate-400">Skor Peluang</span>
-          <span className="px-1.5 py-0.5 text-[10px] rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            {topOpportunityGame?.analysis_label}
-          </span>
-        </div>
-      </div>
 
-      {/* Kartu 3: Efisiensi Penonton per Video (Paling Penting untuk Penyetaraan) */}
-      <div className="glass-panel glass-panel-hover p-5 rounded-2xl relative overflow-hidden group border border-amber-500/30">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-amber-400">
-          <Zap className="w-16 h-16" />
+        {/* KPI 3: Efisiensi Penonton / Video */}
+        <div className="p-5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-2">
+            Efisiensi Tertinggi / Video
+          </p>
+          <div className="text-xl font-semibold text-zinc-950 tracking-tight capitalize truncate mb-2">
+            {topEfficiencyGame?.entity || 'N/A'}
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-mono font-semibold text-zinc-900 tabular-nums">
+              {topEfficiencyGame
+                ? `${Math.round(topEfficiencyGame.avg_views_per_video).toLocaleString('id-ID')}`
+                : 'N/A'}
+            </span>
+            <span className="text-zinc-500">views/video</span>
+            <span className="px-1.5 py-0.5 text-[11px] font-mono rounded bg-zinc-100 text-zinc-600 border border-zinc-200 tabular-nums">
+              {topEfficiencyGame?.recent_videos ?? 0} vid
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-amber-400 mb-1 font-semibold text-xs tracking-wider uppercase">
-          <Zap className="w-4 h-4" />
-          Efisiensi Penonton / Video
-        </div>
-        <div className="text-xl font-extrabold text-white tracking-tight capitalize truncate mb-1">
-          {topEfficiencyGame?.entity || 'N/A'}
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-extrabold text-amber-300">
-            {topEfficiencyGame ? (topEfficiencyGame.avg_views_per_video / 1000).toFixed(0) + 'k views/video' : 'N/A'}
-          </span>
-          <span className="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            {topEfficiencyGame?.recent_videos} video
-          </span>
-        </div>
-      </div>
 
-      {/* Kartu 4: Total Penonton Terbaru */}
-      <div className="glass-panel glass-panel-hover p-5 rounded-2xl relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-emerald-400">
-          <Eye className="w-16 h-16" />
+        {/* KPI 4: Total Penonton Terbaru */}
+        <div className="p-5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-2">
+            Total Penonton (7 Hari)
+          </p>
+          <div className="flex items-baseline gap-1.5 mb-2">
+            <span className="text-2xl font-semibold text-zinc-950 tracking-tight font-mono tabular-nums">
+              {(totalViews / 1_000_000).toFixed(2)}M
+            </span>
+            <span className="text-xs text-zinc-500">penonton</span>
+          </div>
+          <p className="text-xs text-zinc-500 tabular-nums">
+            Kumulatif dari {totalVideos} video sampel aktif
+          </p>
         </div>
-        <div className="flex items-center gap-2 text-emerald-400 mb-1 font-semibold text-xs tracking-wider uppercase">
-          <Eye className="w-4 h-4" />
-          Total Penonton Terbaru
-        </div>
-        <div className="text-3xl font-black text-white tracking-tight mb-2">
-          {(totalViews / 1000000).toFixed(2)}M
-          <span className="text-sm font-normal text-slate-400 ml-1">penonton</span>
-        </div>
-        <p className="text-xs text-slate-400 truncate">
-          Cakupan penonton kumulatif di seluruh sampel video
-        </p>
       </div>
-    </div>
+    </section>
   );
 };

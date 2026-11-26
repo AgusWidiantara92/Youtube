@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Check, Copy, Terminal, Rocket, GitBranch } from 'lucide-react';
+import { X, Check, Copy, Terminal, GitBranch } from 'lucide-react';
 
 interface VercelDeployModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ export const VercelDeployModal: React.FC<VercelDeployModalProps> = ({ isOpen, on
 
   if (!isOpen) return null;
 
-  const vercelCliCmd = `npx vercel`;
+  const vercelCliCmd = 'npx vercel --prod';
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(vercelCliCmd);
@@ -22,79 +22,96 @@ export const VercelDeployModal: React.FC<VercelDeployModalProps> = ({ isOpen, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="glass-panel w-full max-w-xl rounded-3xl p-6 sm:p-8 space-y-6 border border-emerald-500/40 shadow-2xl relative animate-in fade-in zoom-in duration-200">
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-xl bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
-            <Rocket className="w-6 h-6" />
-          </div>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-[2px]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Panduan Deploy ke Vercel"
+    >
+      <div
+        className="bg-white w-full max-w-lg rounded-xl border border-zinc-200 shadow-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight">
-              Panduan Hosting: Deploy ke Vercel
-            </h2>
-            <p className="text-xs text-slate-400">
-              Mempublikasikan Dashboard YouTube Gaming Next.js Anda dalam hitungan detik
+            <h2 className="text-sm font-semibold text-zinc-950">Publikasi ke Vercel</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Langkah deploy aplikasi Next.js dashboard analitik
             </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+            aria-label="Tutup dialog"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Instruksi Langkah demi Langkah */}
-        <div className="space-y-4 text-xs">
-          {/* Opsi 1: Vercel CLI */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2.5">
-            <div className="flex items-center justify-between font-bold text-emerald-400">
-              <span className="flex items-center gap-1.5 text-sm">
-                <Terminal className="w-4 h-4" /> Opsi 1: Deploy dengan Vercel CLI
+        <div className="p-6 space-y-4 text-xs">
+          <div className="p-4 rounded-lg bg-zinc-50 border border-zinc-200 space-y-2.5">
+            <div className="flex items-center justify-between font-medium text-zinc-900">
+              <span className="inline-flex items-center gap-1.5">
+                <Terminal className="w-3.5 h-3.5 text-zinc-500" />
+                Opsi 1: Vercel CLI
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 text-[10px]">
-                Direkomendasikan
+              <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-white border border-zinc-200 text-zinc-600">
+                Cepat
               </span>
             </div>
-            <p className="text-slate-300">
-              Buka terminal di folder proyek <code className="bg-slate-800 text-cyan-300 px-1 py-0.5 rounded">youtube-gaming-dashboard</code> lalu jalankan:
+            <p className="text-zinc-600">
+              Jalankan perintah berikut dari direktori{' '}
+              <code className="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded border border-zinc-200 text-zinc-800">
+                youtube-gaming-dashboard
+              </code>
+              :
             </p>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono text-cyan-300">
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-zinc-950 text-zinc-100 font-mono text-[11px]">
               <span>{vercelCliCmd}</span>
               <button
+                type="button"
                 onClick={copyToClipboard}
-                className="flex items-center gap-1 px-2.5 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Tersalin' : 'Salin'}
+                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copied ? 'Tersalin' : 'Salin'}</span>
               </button>
             </div>
           </div>
 
-          {/* Opsi 2: Repository GitHub */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between font-bold text-purple-400">
-              <span className="flex items-center gap-1.5 text-sm">
-                <GitBranch className="w-4 h-4" /> Opsi 2: Hubungkan via Repository GitHub
-              </span>
+          <div className="p-4 rounded-lg bg-zinc-50 border border-zinc-200 space-y-2">
+            <div className="font-medium text-zinc-900 inline-flex items-center gap-1.5">
+              <GitBranch className="w-3.5 h-3.5 text-zinc-500" />
+              Opsi 2: Deploy Otomatis via GitHub
             </div>
-            <ol className="list-decimal list-inside text-slate-300 space-y-1.5 pl-1">
-              <li>Push folder proyek ini ke akun GitHub Anda.</li>
-              <li>Buka <a href="https://vercel.com/new" target="_blank" rel="noreferrer" className="text-cyan-400 underline">vercel.com/new</a> dan pilih repository Anda.</li>
-              <li>Vercel akan otomatis mendeteksi konfigurasi framework <strong>Next.js</strong>.</li>
-              <li>Klik <strong>Deploy</strong> — Vercel akan menghasilkan URL langsung (live URL) Anda!</li>
+            <ol className="list-decimal list-inside text-zinc-600 space-y-1.5">
+              <li>Push perubahan terbaru ke repository GitHub proyek.</li>
+              <li>
+                Hubungkan repository di{' '}
+                <a
+                  href="https://vercel.com/new"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:underline font-medium"
+                >
+                  vercel.com/new
+                </a>
+                .
+              </li>
+              <li>Vercel akan mendeteksi Next.js secara otomatis dan membangun ulang produksi.</li>
             </ol>
           </div>
         </div>
 
-        <div className="flex justify-end pt-2">
+        <div className="px-6 py-3.5 bg-zinc-50 border-t border-zinc-200 flex justify-end">
           <button
+            type="button"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-md shadow-emerald-500/20 transition-all hover:opacity-90"
+            className="px-4 py-1.5 text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg transition-colors cursor-pointer"
           >
-            Paham, Ayo Deploy!
+            Tutup
           </button>
         </div>
       </div>
